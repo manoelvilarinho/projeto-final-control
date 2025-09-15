@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .bg-gradient-custom {
+            background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .hidden {
+            display: none;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-buttons {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        @media (max-width: 640px) {
+            .btn-group {
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+            .btn-group button {
+                flex-grow: 1;
+                width: auto;
+                min-width: 80px;
+            }
+        }
+        .auth-background {
+            position: relative;
+            background-color: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 100%;
+            max-width: 48rem;
+            padding: 2rem;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-gradient-custom min-h-screen flex items-center justify-center p-4">
+
+<div id="app" class="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full">
+
+    <div id="login-section" class="flex flex-col items-center justify-center relative z-10">
+        <img src="logo.png" alt="Logo Control" class="w-40 mb-8">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">Login</h2>
+        <form id="login-form" class="w-full max-w-sm">
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 font-semibold mb-2">E-mail</label>
+                <input type="email" id="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite seu e-mail" required>
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 font-semibold mb-2">Senha</label>
+                <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite sua senha" required>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">Entrar</button>
+            <p id="login-message" class="text-center text-red-500 mt-4"></p>
+            <p class="text-center mt-4 text-sm text-gray-600">
+                Não tem uma conta? <a href="#" id="link-to-register" class="text-blue-500 hover:underline">Cadastre-se</a>
+            </p>
+        </form>
+    </div>
+
+    <div id="register-section" class="flex-col items-center justify-center hidden relative z-10">
+        <img src="logo.png" alt="Logo Control" class="w-40 mb-8">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">Novo Cadastro</h2>
+        <form id="register-form" class="w-full max-w-sm">
+            <div class="mb-4">
+                <label for="reg-email" class="block text-gray-700 font-semibold mb-2">E-mail</label>
+                <input type="email" id="reg-email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite seu e-mail" required>
+            </div>
+            <div class="mb-4">
+                <label for="reg-password" class="block text-gray-700 font-semibold mb-2">Senha</label>
+                <input type="password" id="reg-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Crie uma senha" required>
+            </div>
+            <div class="mb-6">
+                <label for="reg-password-confirm" class="block text-sm font-medium text-gray-700">Confirmar Senha</label>
+                <input type="password" id="reg-password-confirm" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Confirme a nova senha" required>
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">Cadastrar</button>
+            <p id="register-message" class="text-center text-red-500 mt-4"></p>
+            <p class="text-center mt-4 text-sm text-gray-600">
+                Já tem uma conta? <a href="#" id="link-to-login" class="text-blue-500 hover:underline">Faça login</a>
+            </p>
+        </form>
+    </div>
+
+    <div id="main-app" class="hidden">
+        <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="Logo Control" class="h-28 w-auto">
+            </div>
+            <nav class="mt-4 sm:mt-0 flex flex-wrap justify-center sm:justify-end gap-1">
+                <button id="btn-cadastro" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300">
+                    Novo Empréstimo
+                </button>
+                <button id="btn-relatorio" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300">
+                    Empréstimos Ativos
+                </button>
+                <button id="btn-historico" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300">
+                    Histórico
+                </button>
+                <button id="btn-mudar-senha" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition duration-300">
+                    Mudar Senha
+                </button>
+                <button id="btn-logout" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-300">
+                    Sair
+                </button>
+            </nav>
+        </header>
+        
+        <main>
+            <section id="dashboard" class="mb-8 p-6 bg-blue-100 rounded-xl shadow-inner border border-blue-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-blue-800">Dashboard Financeiro</h2>
+                    <button class="toggle-visibility" data-target="dashboard-totals">
+                        <svg class="h-6 w-6 text-gray-500 hover:text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="dashboard-totals" class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+                    <div class="bg-white p-4 rounded-lg shadow-md border-b-4 border-blue-500">
+                        <h3 class="font-semibold text-gray-600">Saldo Emprestado</h3>
+                        <div class="mt-2">
+                            <span id="total-emprestado" class="text-3xl font-bold text-blue-600">R$ 0,00</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-md border-b-4 border-yellow-500">
+                        <h3 class="font-semibold text-gray-600">Juros a Receber</h3>
+                        <div class="mt-2">
+                            <span id="juros-a-receber" class="text-3xl font-bold text-yellow-600">R$ 0,00</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-md border-b-4 border-green-500">
+                        <h3 class="font-semibold text-gray-600">Total Recebido</h3>
+                        <div class="mt-2">
+                            <span id="total-recebido" class="text-3xl font-bold text-green-600">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="cadastro-section" class="p-6 bg-white rounded-lg shadow-inner hidden">
+                <h2 class="text-2xl font-bold mb-4 text-gray-700">Novo Empréstimo</h2>
+                <form id="loan-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="client-name" class="block text-sm font-medium text-gray-700">Nome do Cliente</label>
+                        <input type="text" id="client-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="loan-value" class="block text-sm font-medium text-gray-700">Valor do Empréstimo</label>
+                        <input type="text" id="loan-value" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" value="0,00" required>
+                    </div>
+                    <div>
+                        <label for="loan-interest" class="block text-sm font-medium text-gray-700">Juros (%)</label>
+                        <input type="text" id="loan-interest" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" value="0,00" required>
+                    </div>
+                    <div>
+                        <label for="loan-date" class="block text-sm font-medium text-gray-700">Data do Empréstimo</label>
+                        <input type="date" id="loan-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="due-date" class="block text-sm font-medium text-gray-700">Data de Vencimento</label>
+                        <input type="date" id="due-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="notes" class="block text-sm font-medium text-gray-700">Observações</label>
+                        <textarea id="notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    <div class="md:col-span-2 flex justify-end gap-2">
+                        <button type="button" id="btn-back-from-edit" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Voltar
+                        </button>
+                        <button type="submit" id="submit-loan-btn" class="py-2 px-4 border border-gray-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Salvar Empréstimo
+                        </button>
+                    </div>
+                </form>
+            </section>
+            
+            <section id="report-section" class="p-6 bg-white rounded-lg shadow-inner hidden">
+                <h2 class="text-2xl font-bold mb-4 text-gray-700">Empréstimos Ativos</h2>
+                <div class="mb-4">
+                    <input type="text" id="filter-input" placeholder="Filtrar por nome do cliente..." class="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="space-y-4" id="loans-container">
+                </div>
+            </section>
+
+            <section id="history-section" class="p-6 bg-white rounded-lg shadow-inner hidden">
+                <h2 class="text-2xl font-bold mb-4 text-gray-700">Histórico de Pagamentos</h2>
+                <div id="all-payments-list" class="space-y-4">
+                </div>
+            </section>
+            
+            <section id="change-password-section" class="p-6 bg-white rounded-lg shadow-inner hidden">
+                <h2 class="text-2xl font-bold mb-4 text-gray-700">Mudar Senha</h2>
+                <form id="change-password-form" class="w-full max-w-sm">
+                    <div class="mb-4">
+                        <label for="new-password" class="block text-gray-700 font-semibold mb-2">Nova Senha</label>
+                        <input type="password" id="new-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite a nova senha" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="confirm-new-password" class="block text-gray-700 font-semibold mb-2">Confirmar Nova Senha</label>
+                        <input type="password" id="confirm-new-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Confirme a nova senha" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">Mudar Senha</button>
+                    <p id="password-change-message" class="text-center text-red-500 mt-4"></p>
+                </form>
+            </section>
+        </main>
+    </div>
+</div>
+
+<div id="alert-modal" class="modal hidden">
+    <div class="modal-content">
+        <p id="alert-message" class="text-lg font-semibold text-gray-800"></p>
+        <div class="modal-buttons">
+            <button id="alert-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="payment-modal" class="modal hidden">
+    <div class="modal-content text-left">
+        <h3 class="text-xl font-bold mb-4">Registrar Pagamento</h3>
+        <p id="payment-client-name" class="mb-2 text-gray-700"></p>
+        <p id="payment-loan-value" class="mb-4 text-gray-700"></p>
+        <form id="payment-form">
+            <label for="payment-amount" class="block text-sm font-medium text-gray-700 mb-2">Valor Recebido (R$)</label>
+            <input type="text" id="payment-amount" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" value="0,00" required>
+            <div class="flex justify-end gap-2">
+                <button type="button" id="payment-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300">Cancelar</button>
+                <button type="button" id="payment-partial-btn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">Parcial</button>
+                <button type="button" id="payment-total-btn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300">Quitar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="payment-confirmation-modal" class="modal hidden">
+    <div class="modal-content">
+        <p id="payment-confirmation-message" class="text-lg font-semibold text-gray-800"></p>
+        <div class="modal-buttons">
+            <button id="payment-confirm-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300">Cancelar</button>
+            <button id="payment-confirm-ok-btn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<div id="confirm-modal" class="modal hidden">
+    <div class="modal-content">
+        <p class="text-lg font-semibold text-gray-800">Tem certeza que deseja excluir este empréstimo?</p>
+        <div class="modal-buttons">
+            <button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300">Cancelar</button>
+            <button id="confirm-ok-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // --- Configuração do Firebase ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updatePassword, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    // ATENÇÃO: Substitua as chaves abaixo pelas chaves do seu projeto Firebase.
+    const firebaseConfig = {
+      apiKey: "AIzaSyCGF1CvlF9HpxbvN3le9YkbA6-QSgQ0DT8",
+      authDomain: "controll-6be4e.firebaseapp.com",
+      projectId: "controll-6be4e",
+      storageBucket: "controll-6be4e.firebasestorage.app",
+      messagingSenderId: "1034721151120",
+      appId: "1:1034721151120:web:52041aa20d639ab6437015",
+      measurementId: "G-CERFLFT21M"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- Variáveis e Estado ---
+    const loginSection = document.getElementById('login-section');
+    const registerSection = document.getElementById('register-section');
+    const mainAppSection = document.getElementById('main-app');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const loginMessage = document.getElementById('login-message');
+    const registerMessage = document.getElementById('register-message');
+    const linkToRegister = document.getElementById('link-to-register');
+    const linkToLogin = document.getElementById('link-to-login');
+
+    const cadastroSection = document.getElementById('cadastro-section');
+    const reportSection = document.getElementById('report-section');
+    const historySection = document.getElementById('history-section');
+    const changePasswordSection = document.getElementById('change-password-section');
+    
+    const btnCadastro = document.getElementById('btn-cadastro');
+    const btnRelatorio = document.getElementById('btn-relatorio');
+    const btnHistorico = document.getElementById('btn-historico');
+    const btnLogout = document.getElementById('btn-logout');
+    const btnMudarSenha = document.getElementById('btn-mudar-senha');
+
+    const loanForm = document.getElementById('loan-form');
+    const clientNameInput = document.getElementById('client-name');
+    const loanValueInput = document.getElementById('loan-value');
+    const loanInterestInput = document.getElementById('loan-interest');
+    const loanDateInput = document.getElementById('loan-date');
+    const dueDateInput = document.getElementById('due-date');
+    const notesInput = document.getElementById('notes');
+
+    const submitLoanBtn = document.getElementById('submit-loan-btn');
+    const btnBackFromEdit = document.getElementById('btn-back-from-edit');
+    const loansContainer = document.getElementById('loans-container');
+    const filterInput = document.getElementById('filter-input');
+    const changePasswordForm = document.getElementById('change-password-form');
+    const passwordChangeMessage = document.getElementById('password-change-message');
+
+    const alertModal = document.getElementById('alert-modal');
+    const alertMessage = document.getElementById('alert-message');
+    const alertOkBtn = document.getElementById('alert-ok-btn');
+
+    const paymentModal = document.getElementById('payment-modal');
+    const paymentForm = document.getElementById('payment-form');
+    const paymentClientName = document.getElementById('payment-client-name');
+    const paymentLoanValue = document.getElementById('payment-loan-value');
+    const paymentAmountInput = document.getElementById('payment-amount');
+    const paymentCancelBtn = document.getElementById('payment-cancel-btn');
+    const paymentTotalBtn = document.getElementById('payment-total-btn');
+    const paymentPartialBtn = document.getElementById('payment-partial-btn');
+    const paymentConfirmationModal = document.getElementById('payment-confirmation-modal');
+    const paymentConfirmationMessage = document.getElementById('payment-confirmation-message');
+    const paymentConfirmOkBtn = document.getElementById('payment-confirm-ok-btn');
+    const paymentConfirmCancelBtn = document.getElementById('payment-confirm-cancel-btn');
+
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmOkBtn = document.getElementById('confirm-ok-btn');
+    const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+    
+    const allPaymentsList = document.getElementById('all-payments-list');
+
+    const totalEmprestadoSpan = document.getElementById('total-emprestado');
+    const jurosAReceberSpan = document.getElementById('juros-a-receber');
+    const totalRecebidoSpan = document.getElementById('total-recebido');
+    const toggleButtons = document.querySelectorAll('.toggle-visibility');
+    
+    let loans = [];
+    let currentLoanId = null;
+    let valuesHidden = false;
+    let totalRecebidoCache = 0;
+    let paymentType = null;
+    let currentPaymentAmount = 0;
+    let currentLoanTotalValue = 0;
+
+    // --- Funções de Lógica do Firebase ---
+    function getLoansCollection() {
+        if (!auth.currentUser) return null;
+        return collection(db, `users/${auth.currentUser.uid}/loans`);
+    }
+
+    function getTotalsDoc() {
+        if (!auth.currentUser) return null;
+        return doc(db, `users/${auth.currentUser.uid}/totals/dashboard`);
+    }
+    
+    function getAllPaymentsCollection() {
+        if (!auth.currentUser) return null;
+        return collection(db, `users/${auth.currentUser.uid}/payments`);
+    }
+
+    async function loadInitialData() {
+        if (!auth.currentUser) return;
+        
+        onSnapshot(getTotalsDoc(), (doc) => {
+            if (doc.exists()) {
+                totalRecebidoCache = doc.data().totalRecebido || 0;
+            } else {
+                setDoc(getTotalsDoc(), { totalRecebido: 0 });
+                totalRecebidoCache = 0;
+            }
+            renderDashboard();
+        });
+
+        onSnapshot(getLoansCollection(), (snapshot) => {
+            loans = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            renderLoans();
+            renderDashboard();
+        });
+    }
+
+    // --- Funções de Lógica Geral ---
+    function calculateTotalWithInterest(loanValue, interestRate, loanDate) {
+        const today = new Date();
+        const loanDateObj = new Date(loanDate + 'T00:00:00');
+        
+        const diffTime = today.getTime() - loanDateObj.getTime();
+        const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        let totalValue = parseFloat(loanValue);
+        const dailyInterestRate = parseFloat(interestRate) / 100 / 30;
+        
+        if (daysPassed > 0) {
+            totalValue = totalValue * Math.pow(1 + dailyInterestRate, daysPassed);
+        }
+        
+        return totalValue;
+    }
+    
+    function renderDashboard() {
+        let totalEmprestado = 0;
+        let jurosAReceber = 0;
+        
+        loans.forEach(loan => {
+            const loanValue = parseFloat(loan.value);
+            const interestRate = parseFloat(loan.interest);
+            
+            const totalValue = calculateTotalWithInterest(loanValue, interestRate, loan.loanDate);
+            
+            totalEmprestado += loanValue;
+            jurosAReceber += (totalValue - loanValue);
+        });
+
+        if (valuesHidden) {
+            totalEmprestadoSpan.textContent = '********';
+            jurosAReceberSpan.textContent = '********';
+            totalRecebidoSpan.textContent = '********';
+        } else {
+            totalEmprestadoSpan.textContent = `R$ ${totalEmprestado.toFixed(2).replace('.', ',')}`;
+            jurosAReceberSpan.textContent = `R$ ${jurosAReceber.toFixed(2).replace('.', ',')}`;
+            totalRecebidoSpan.textContent = `R$ ${totalRecebidoCache.toFixed(2).replace('.', ',')}`;
+        }
+    }
+
+    function showAlertModal(message) {
+        alertMessage.textContent = message;
+        alertModal.classList.remove('hidden');
+    }
+    
+    function hideAlertModal() {
+        alertModal.classList.add('hidden');
+    }
+    
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const [year, month, day] = dateString.split('-');
+        return `${day}/${month}/${year}`;
+    }
+
+    function getDaysSinceLoan(loanDateString) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); 
+        const loanDate = new Date(loanDateString + 'T00:00:00');
+        
+        const diffTime = today.getTime() - loanDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    }
+
+    function renderLoans() {
+        loansContainer.innerHTML = '';
+        const searchTerm = filterInput.value.toLowerCase();
+        
+        const filteredLoans = loans.filter(loan =>
+            loan.clientName.toLowerCase().includes(searchTerm)
+        );
+
+        if (filteredLoans.length === 0) {
+            loansContainer.innerHTML = '<p class="text-center text-gray-500 mt-8">Nenhum empréstimo encontrado.</p>';
+            return;
+        }
+
+        filteredLoans.forEach((loan) => {
+            const today = new Date();
+            const dueDateObj = new Date(loan.dueDate + 'T00:00:00');
+
+            const statusText = today.getTime() > dueDateObj.getTime() ? 'Atrasado' : 'Em dia';
+            const statusColor = today.getTime() > dueDateObj.getTime() ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800';
+
+            const loanValue = parseFloat(loan.value);
+            const interestRate = parseFloat(loan.interest);
+            
+            const totalValue = calculateTotalWithInterest(loanValue, interestRate, loan.loanDate);
+            const daysSinceLoan = getDaysSinceLoan(loan.loanDate);
+            
+            const loanCard = document.createElement('div');
+            loanCard.className = 'bg-white p-6 rounded-xl shadow-md border border-gray-200 transition-all duration-300 hover:shadow-lg';
+            loanCard.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">${loan.clientName}</h3>
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold ${statusColor}">
+                        ${statusText}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-2 text-sm text-gray-600">
+                    <p><strong>Valor Inicial:</strong> R$ ${loanValue.toFixed(2).replace('.', ',')}</p>
+                    <p><strong>Juros:</strong> ${interestRate.toFixed(2).replace('.', ',')}%</p>
+                    <p><strong>Total Atual:</strong> R$ ${totalValue.toFixed(2).replace('.', ',')}</p>
+                    <p><strong>Data do Empréstimo:</strong> ${formatDate(loan.loanDate)}</p>
+                    <p><strong>Vencimento:</strong> ${formatDate(loan.dueDate)}</p>
+                    <p><strong>Dias do Empréstimo:</strong> ${daysSinceLoan} dias</p>
+                    ${loan.notes ? `<div class="md:col-span-2"><p><strong>Observações:</strong> ${loan.notes}</p></div>` : ''}
+                </div>
+                <div class="mt-4 flex flex-wrap justify-end gap-2 btn-group">
+                    <button class="px-4 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300 shadow-md edit-btn" data-id="${loan.id}">
+                        Editar
+                    </button>
+                    <button class="px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg hover:bg-green-600 transition duration-300 shadow-md payment-btn" data-id="${loan.id}">
+                        Pagamento
+                    </button>
+                    <button class="px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-300 shadow-md delete-btn" data-id="${loan.id}">
+                        Excluir
+                    </button>
+                    <button class="px-2 py-2 text-sm font-semibold text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-300 shadow-md share-btn" data-id="${loan.id}">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.41" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            loanCard.querySelector('.edit-btn').addEventListener('click', () => showEditModal(loan.id));
+            loanCard.querySelector('.payment-btn').addEventListener('click', () => showPaymentModal(loan.id));
+            loanCard.querySelector('.delete-btn').addEventListener('click', () => showConfirmModal(loan.id));
+            loanCard.querySelector('.share-btn').addEventListener('click', () => shareLoanDetails(loan.id));
+            
+            loansContainer.appendChild(loanCard);
+        });
+    }
+
+    function renderAllPayments() {
+        const paymentsRef = getAllPaymentsCollection();
+        onSnapshot(query(paymentsRef, orderBy("date", "desc")), (snapshot) => {
+            allPaymentsList.innerHTML = '';
+            if (snapshot.empty) {
+                allPaymentsList.innerHTML = '<p class="text-center text-gray-500 mt-8">Nenhum pagamento registrado.</p>';
+            } else {
+                snapshot.forEach(doc => {
+                    const payment = doc.data();
+                    const paymentItem = document.createElement('div');
+                    paymentItem.className = 'p-4 border border-gray-200 rounded-lg shadow-sm bg-white';
+                    paymentItem.innerHTML = `
+                        <p><strong>Cliente:</strong> ${payment.clientName}</p>
+                        <p><strong>Valor:</strong> R$ ${parseFloat(payment.amount).toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Data:</strong> ${formatDate(payment.date)}</p>
+                        <p><strong>Tipo:</strong> ${payment.type === 'total' ? 'Quitação' : 'Parcial'}</p>
+                    `;
+                    allPaymentsList.appendChild(paymentItem);
+                });
+            }
+        });
+    }
+
+    function switchSection(sectionId) {
+        const sections = [loginSection, registerSection, cadastroSection, reportSection, historySection, changePasswordSection];
+        sections.forEach(section => {
+            section.classList.add('hidden');
+        });
+        
+        const appContainer = document.getElementById('app');
+        if (sectionId === 'login-section' || sectionId === 'register-section') {
+            appContainer.classList.remove('bg-gray-50');
+            appContainer.classList.add('bg-white');
+            appContainer.classList.remove('p-8');
+            appContainer.classList.remove('max-w-4xl');
+            appContainer.classList.remove('w-full');
+            appContainer.classList.add('flex', 'flex-col', 'items-center', 'justify-center');
+            
+            mainAppSection.classList.add('hidden');
+            document.getElementById(sectionId).classList.remove('hidden');
+        } else {
+            appContainer.classList.add('bg-white');
+            appContainer.classList.add('p-8', 'max-w-4xl', 'w-full');
+            appContainer.classList.remove('flex', 'flex-col', 'items-center', 'justify-center');
+            
+            mainAppSection.classList.remove('hidden');
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+    }
+
+    // --- Funções de Interação e Lógica do App ---
+    async function showConfirmModal(id) {
+        currentLoanId = id;
+        confirmModal.classList.remove('hidden');
+    }
+
+    async function deleteLoanConfirmed() {
+        if (currentLoanId) {
+            try {
+                const docRef = doc(getLoansCollection(), currentLoanId);
+                await deleteDoc(docRef);
+                showAlertModal('Empréstimo excluído com sucesso!');
+                currentLoanId = null;
+            } catch (e) {
+                showAlertModal('Erro ao excluir empréstimo.');
+            }
+        }
+        confirmModal.classList.add('hidden');
+    }
+
+    async function showPaymentModal(id) {
+        currentLoanId = id;
+        const loan = loans.find(l => l.id === id);
+        if (loan) {
+            currentLoanTotalValue = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate);
+            paymentClientName.textContent = `Cliente: ${loan.clientName}`;
+            paymentLoanValue.textContent = `Valor Atual da Dívida: R$ ${currentLoanTotalValue.toFixed(2).replace('.', ',')}`;
+            paymentAmountInput.value = currentLoanTotalValue.toFixed(2).replace('.', ',');
+            paymentModal.classList.remove('hidden');
+        }
+    }
+
+    function shareLoanDetails(id) {
+        const loan = loans.find(l => l.id === id);
+        if (loan) {
+            const totalValue = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate);
+            const message = `Olá, ${loan.clientName}. O valor atual do seu empréstimo é de R$ ${totalValue.toFixed(2).replace('.', ',')}. O vencimento foi em ${formatDate(loan.dueDate)}. Por favor, realize o pagamento. Obrigado!`;
+            
+            navigator.clipboard.writeText(message).then(() => {
+                showAlertModal('Mensagem de cobrança copiada para a área de transferência!');
+            }).catch(err => {
+                console.error('Erro ao copiar: ', err);
+                showAlertModal('Erro ao copiar a mensagem. Por favor, tente manualmente.');
+            });
+        }
+    }
+
+    async function showEditModal(id) {
+        currentLoanId = id;
+        const loan = loans.find(l => l.id === id);
+        if (loan) {
+            clientNameInput.value = loan.clientName;
+            loanValueInput.value = parseFloat(loan.value).toFixed(2).replace('.', ',');
+            loanInterestInput.value = parseFloat(loan.interest).toFixed(2).replace('.', ',');
+            loanDateInput.value = loan.loanDate;
+            dueDateInput.value = loan.dueDate;
+            notesInput.value = loan.notes;
+
+            submitLoanBtn.textContent = 'Atualizar Empréstimo';
+            
+            switchSection('cadastro-section');
+        }
+    }
+    
+    // --- Event Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+        onAuthStateChanged(auth, (user) => {
+            const appContainer = document.getElementById('app');
+            if (user) {
+                appContainer.classList.remove('auth-background');
+                mainAppSection.classList.remove('hidden');
+                loginSection.classList.add('hidden');
+                registerSection.classList.add('hidden');
+                loadInitialData();
+            } else {
+                appContainer.classList.add('auth-background');
+                mainAppSection.classList.add('hidden');
+                loginSection.classList.remove('hidden');
+                registerSection.classList.add('hidden'); 
+            }
+        });
+    });
+
+    // Funções para formatação de inputs numéricos
+    function formatNumberInput(e) {
+        let value = e.target.value.replace(/,/g, '.');
+        e.target.value = value;
+    }
+    
+    function formatOnBlur(e) {
+        let value = e.target.value.replace(/,/g, '.');
+        const floatValue = parseFloat(value);
+        if (isNaN(floatValue)) {
+            e.target.value = '0,00';
+        } else {
+            e.target.value = floatValue.toFixed(2).replace('.', ',');
+        }
+    }
+    
+    function handleInputFocus(e) {
+        if (e.target.value === '0,00' || e.target.value === '0.00') {
+            e.target.value = '';
+        } else {
+            e.target.value = e.target.value.replace(',', '.');
+        }
+    }
+
+    // Aplica os event listeners de formatação aos campos
+    loanValueInput.addEventListener('input', formatNumberInput);
+    loanValueInput.addEventListener('focus', handleInputFocus);
+    loanValueInput.addEventListener('blur', formatOnBlur);
+    
+    loanInterestInput.addEventListener('input', formatNumberInput);
+    loanInterestInput.addEventListener('focus', handleInputFocus);
+    loanInterestInput.addEventListener('blur', formatOnBlur);
+    
+    paymentAmountInput.addEventListener('input', formatNumberInput);
+    paymentAmountInput.addEventListener('focus', handleInputFocus);
+    paymentAmountInput.addEventListener('blur', formatOnBlur);
+
+    alertOkBtn.addEventListener('click', hideAlertModal);
+    paymentConfirmCancelBtn.addEventListener('click', () => paymentConfirmationModal.classList.add('hidden'));
+    confirmOkBtn.addEventListener('click', deleteLoanConfirmed);
+    confirmCancelBtn.addEventListener('click', () => confirmModal.classList.add('hidden'));
+    
+    linkToRegister.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginSection.classList.add('hidden');
+        registerSection.classList.remove('hidden');
+    });
+
+    linkToLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        registerSection.classList.add('hidden');
+        loginSection.classList.remove('hidden');
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = e.target.email.value;
+        const password = e.target.password.value;
+        
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            loginMessage.textContent = 'Login bem-sucedido!';
+            loginMessage.classList.remove('text-red-500');
+            loginMessage.classList.add('text-green-500');
+            setTimeout(() => {
+                // A navegação será tratada pelo onAuthStateChanged
+            }, 1000);
+        } catch (error) {
+            let message = 'Erro ao fazer login. Tente novamente.';
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                message = 'E-mail ou senha incorretos.';
+            } else {
+                message = `Erro: ${error.message}`;
+            }
+            loginMessage.textContent = message;
+            loginMessage.classList.add('text-red-500');
+            loginMessage.classList.remove('text-green-500');
+        }
+    });
+
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = e.target['reg-email'].value;
+        const password = e.target['reg-password'].value;
+        const confirmPassword = e.target['reg-password-confirm'].value;
+
+        if (password !== confirmPassword) {
+            registerMessage.textContent = 'As senhas não coincidem!';
+            registerMessage.classList.add('text-red-500');
+            registerMessage.classList.remove('text-green-500');
+            return;
+        }
+
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            registerMessage.textContent = 'Usuário cadastrado com sucesso! Você será redirecionado para o login.';
+            registerMessage.classList.remove('text-red-500');
+            registerMessage.classList.add('text-green-500');
+            
+            setTimeout(() => {
+                registerMessage.textContent = '';
+                loginSection.classList.remove('hidden');
+                registerSection.classList.add('hidden');
+            }, 2000);
+        } catch (error) {
+            let message = 'Erro ao cadastrar. Tente novamente.';
+            if (error.code === 'auth/email-already-in-use') {
+                message = 'E-mail já cadastrado.';
+            } else if (error.code === 'auth/weak-password') {
+                message = 'A senha deve ter pelo menos 6 caracteres.';
+            } else {
+                message = `Erro: ${error.message}`;
+            }
+            registerMessage.textContent = message;
+            registerMessage.classList.add('text-red-500');
+            registerMessage.classList.remove('text-green-500');
+        }
+    });
+
+    btnLogout.addEventListener('click', async () => {
+        await signOut(auth);
+        loanForm.reset();
+        loginForm.reset();
+        loginMessage.textContent = '';
+        currentLoanId = null;
+    });
+
+    btnCadastro.addEventListener('click', () => {
+        currentLoanId = null;
+        loanForm.reset();
+        submitLoanBtn.textContent = 'Salvar Empréstimo';
+        loanValueInput.value = '0,00';
+        loanInterestInput.value = '0,00';
+        switchSection('cadastro-section');
+    });
+
+    btnRelatorio.addEventListener('click', () => {
+        renderLoans();
+        switchSection('report-section');
+    });
+
+    btnHistorico.addEventListener('click', () => {
+        renderAllPayments();
+        switchSection('history-section');
+    });
+
+    btnMudarSenha.addEventListener('click', () => {
+        switchSection('change-password-section');
+    });
+
+    btnBackFromEdit.addEventListener('click', () => {
+        currentLoanId = null;
+        loanForm.reset();
+        submitLoanBtn.textContent = 'Salvar Empréstimo';
+        loanValueInput.value = '0,00';
+        loanInterestInput.value = '0,00';
+        switchSection('report-section');
+        renderLoans();
+    });
+
+    changePasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newPassword = e.target['new-password'].value;
+        const confirmPassword = e.target['confirm-new-password'].value;
+
+        if (newPassword !== confirmPassword) {
+            passwordChangeMessage.textContent = 'As senhas não coincidem!';
+            passwordChangeMessage.classList.add('text-red-500');
+            passwordChangeMessage.classList.remove('text-green-500');
+            return;
+        }
+        
+        const user = auth.currentUser;
+        if (user) {
+            const credential = EmailAuthProvider.credential(user.email, prompt("Por favor, digite sua senha atual para confirmar:"));
+            try {
+                await reauthenticateWithCredential(user, credential);
+                await updatePassword(user, newPassword);
+                passwordChangeMessage.textContent = 'Senha alterada com sucesso!';
+                passwordChangeMessage.classList.remove('text-red-500');
+                passwordChangeMessage.classList.add('text-green-500');
+                changePasswordForm.reset();
+                setTimeout(() => {
+                    passwordChangeMessage.textContent = '';
+                    switchSection('cadastro-section');
+                }, 2000);
+            } catch (error) {
+                let message = 'Erro ao alterar a senha. Senha atual incorreta ou login expirado.';
+                passwordChangeMessage.textContent = message;
+                passwordChangeMessage.classList.add('text-red-500');
+                passwordChangeMessage.classList.remove('text-green-500');
+            }
+        }
+    });
+
+    loanForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const loanData = {
+            clientName: clientNameInput.value,
+            value: parseFloat(loanValueInput.value.replace(',', '.')),
+            interest: parseFloat(loanInterestInput.value.replace(',', '.')),
+            loanDate: loanDateInput.value,
+            dueDate: dueDateInput.value,
+            notes: notesInput.value,
+        };
+
+        try {
+            if (currentLoanId) {
+                const docRef = doc(getLoansCollection(), currentLoanId);
+                await updateDoc(docRef, loanData);
+                showAlertModal('Empréstimo atualizado com sucesso!');
+            } else {
+                await addDoc(getLoansCollection(), loanData);
+                showAlertModal('Empréstimo salvo com sucesso!');
+            }
+            loanForm.reset();
+            currentLoanId = null;
+            submitLoanBtn.textContent = 'Salvar Empréstimo';
+            loanValueInput.value = '0,00';
+            loanInterestInput.value = '0,00';
+            switchSection('report-section');
+        } catch (e) {
+            showAlertModal('Erro ao salvar empréstimo.');
+        }
+    });
+
+    function showPaymentConfirmation(type) {
+        const loan = loans.find(l => l.id === currentLoanId);
+        if (!loan) {
+            showAlertModal('Empréstimo não encontrado.');
+            return;
+        }
+        
+        const totalValue = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate);
+        const amount = parseFloat(paymentAmountInput.value.replace(/,/g, '.'));
+        
+        if (isNaN(amount) || amount <= 0) {
+            showAlertModal('O valor do pagamento deve ser maior que zero.');
+            return;
+        }
+
+        if (amount > totalValue && type === 'parcial') {
+            showAlertModal(`O valor do pagamento não pode ser maior que o saldo devedor de R$ ${totalValue.toFixed(2).replace('.', ',')}.`);
+            return;
+        }
+        
+        currentPaymentAmount = amount;
+        paymentType = type;
+        
+        let message;
+        if (type === 'total') {
+            const roundedTotalValue = parseFloat(totalValue.toFixed(2));
+            const roundedAmount = parseFloat(amount.toFixed(2));
+            
+            if (roundedAmount < roundedTotalValue) {
+                showAlertModal('O valor digitado é menor que o total. Use a opção "Parcial" ou adicione mais para quitar a dívida.');
+                return;
+            }
+            
+            message = `Tem certeza que deseja registrar a quitação de R$ ${roundedTotalValue.toFixed(2).replace('.', ',')}?`;
+            currentPaymentAmount = roundedTotalValue;
+        } else if (type === 'parcial') {
+            const roundedTotalValue = parseFloat(totalValue.toFixed(2));
+            const roundedAmount = parseFloat(amount.toFixed(2));
+
+            message = `Tem certeza que deseja registrar o pagamento PARCIAL de R$ ${roundedAmount.toFixed(2).replace('.', ',')}?`;
+            if (roundedAmount >= roundedTotalValue) {
+                showAlertModal('O valor digitado é suficiente para quitar a dívida. Use a opção "Quitar".');
+                return;
+            }
+        }
+
+        paymentConfirmationMessage.textContent = message;
+        paymentModal.classList.add('hidden');
+        paymentConfirmationModal.classList.remove('hidden');
+    }
+
+    paymentTotalBtn.addEventListener('click', () => {
+        showPaymentConfirmation('total');
+    });
+
+    paymentPartialBtn.addEventListener('click', () => {
+        showPaymentConfirmation('parcial');
+    });
+
+    paymentCancelBtn.addEventListener('click', () => {
+        paymentModal.classList.add('hidden');
+        paymentAmountInput.value = '0,00';
+    });
+
+    paymentConfirmOkBtn.addEventListener('click', async () => {
+        paymentConfirmationModal.classList.add('hidden');
+        const paymentAmount = currentPaymentAmount;
+        const originalLoan = loans.find(l => l.id === currentLoanId);
+
+        if (!originalLoan || isNaN(paymentAmount) || paymentAmount <= 0) {
+            showAlertModal('Erro ao processar o pagamento.');
+            return;
+        }
+
+        try {
+            const totalsDocRef = getTotalsDoc();
+            await updateDoc(totalsDocRef, { totalRecebido: totalRecebidoCache + paymentAmount });
+
+            await addDoc(collection(db, `users/${auth.currentUser.uid}/payments`), {
+                clientName: originalLoan.clientName,
+                amount: paymentAmount,
+                date: new Date().toISOString().slice(0, 10),
+                type: paymentType,
+                loanId: currentLoanId,
+            });
+            
+            if (paymentType === 'total') {
+                const loanDocRef = doc(getLoansCollection(), currentLoanId);
+                await deleteDoc(loanDocRef);
+                showAlertModal('Quitação registrada! Empréstimo finalizado.');
+            } else if (paymentType === 'parcial') {
+                const totalValue = calculateTotalWithInterest(originalLoan.value, originalLoan.interest, originalLoan.loanDate);
+                const remainingBalance = totalValue - paymentAmount;
+
+                if (remainingBalance <= 0.01) {
+                    const loanDocRef = doc(getLoansCollection(), currentLoanId);
+                    await deleteDoc(loanDocRef);
+                    showAlertModal('O pagamento parcial foi suficiente para quitar o empréstimo! Ele foi registrado como quitação.');
+                } else {
+                    const updatedLoan = {
+                        ...originalLoan,
+                        value: remainingBalance.toFixed(2),
+                    };
+                    const loanDocRef = doc(getLoansCollection(), currentLoanId);
+                    await updateDoc(loanDocRef, updatedLoan);
+                    showAlertModal(`Pagamento parcial de R$ ${paymentAmount.toFixed(2).replace('.', ',')} registrado. Saldo restante atualizado para R$ ${remainingBalance.toFixed(2).replace('.', ',')}.`);
+                }
+            }
+            paymentAmountInput.value = '0,00';
+        } catch (e) {
+            showAlertModal('Erro ao registrar pagamento.');
+        }
+    });
+    
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            valuesHidden = !valuesHidden;
+            renderDashboard();
+        });
+    });
+
+    filterInput.addEventListener('input', renderLoans);
+</script>
+</body>
+</html>
