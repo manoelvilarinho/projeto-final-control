@@ -66,6 +66,16 @@
             padding: 2rem;
             overflow: hidden;
         }
+        /* Nova classe para a transição de fade */
+        .fade-in {
+            transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+        }
+        .fade-in.active {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body class="bg-gradient-custom min-h-screen flex items-center justify-center p-4">
@@ -73,7 +83,6 @@
 <div id="app" class="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full">
 
     <div id="login-section" class="flex flex-col items-center justify-center relative z-10">
-        <img src="logo.png" alt="Logo Control" class="w-40 mb-8">
         <h2 class="text-3xl font-bold mb-6 text-gray-800">Login</h2>
         <form id="login-form" class="w-full max-w-sm">
             <div class="mb-4">
@@ -93,7 +102,6 @@
     </div>
 
     <div id="register-section" class="flex-col items-center justify-center hidden relative z-10">
-        <img src="logo.png" alt="Logo Control" class="w-40 mb-8">
         <h2 class="text-3xl font-bold mb-6 text-gray-800">Novo Cadastro</h2>
         <form id="register-form" class="w-full max-w-sm">
             <div class="mb-4">
@@ -119,9 +127,12 @@
     <div id="main-app" class="hidden">
         <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
             <div class="flex items-center gap-4">
-                <img src="logo.png" alt="Logo Control" class="h-28 w-auto">
+                <h1 class="text-5xl font-bold text-gray-800 tracking-wider">Control</h1>
             </div>
             <nav class="mt-4 sm:mt-0 flex flex-wrap justify-center sm:justify-end gap-1">
+                <button id="btn-dashboard" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300">
+                    Dashboard
+                </button>
                 <button id="btn-cadastro" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300">
                     Novo Empréstimo
                 </button>
@@ -134,6 +145,9 @@
                 <button id="btn-mudar-senha" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition duration-300">
                     Mudar Senha
                 </button>
+                <button id="btn-limpar-dados" class="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-300">
+                    Limpar Dados
+                </button>
                 <button id="btn-logout" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-300">
                     Sair
                 </button>
@@ -141,7 +155,7 @@
         </header>
         
         <main>
-            <section id="dashboard" class="mb-8 p-6 bg-blue-100 rounded-xl shadow-inner border border-blue-200">
+            <section id="dashboard-section" class="mb-8 p-6 bg-blue-100 rounded-xl shadow-inner border border-blue-200 fade-in">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-2xl font-bold text-blue-800">Dashboard Financeiro</h2>
                     <button class="toggle-visibility" data-target="dashboard-totals">
@@ -173,7 +187,7 @@
                 </div>
             </section>
             
-            <section id="cadastro-section" class="p-6 bg-white rounded-lg shadow-inner hidden">
+            <section id="cadastro-section" class="p-6 bg-white rounded-lg shadow-inner fade-in hidden">
                 <h2 class="text-2xl font-bold mb-4 text-gray-700">Novo Empréstimo</h2>
                 <form id="loan-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -211,7 +225,7 @@
                 </form>
             </section>
             
-            <section id="report-section" class="p-6 bg-white rounded-lg shadow-inner hidden">
+            <section id="report-section" class="p-6 bg-white rounded-lg shadow-inner fade-in hidden">
                 <h2 class="text-2xl font-bold mb-4 text-gray-700">Empréstimos Ativos</h2>
                 <div class="mb-4">
                     <input type="text" id="filter-input" placeholder="Filtrar por nome do cliente..." class="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -220,9 +234,12 @@
                 </div>
             </section>
 
-            <section id="history-section" class="p-6 bg-white rounded-lg shadow-inner hidden">
+            <section id="history-section" class="p-6 bg-white rounded-lg shadow-inner fade-in hidden">
                 <h2 class="text-2xl font-bold mb-4 text-gray-700">Histórico de Pagamentos</h2>
                 <div id="all-payments-list" class="space-y-4">
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-gray-700 mt-8">Empréstimos Arquivados</h3>
+                <div id="finished-loans-list" class="space-y-4">
                 </div>
             </section>
             
@@ -291,11 +308,28 @@
     </div>
 </div>
 
+<div id="password-confirm-modal" class="modal hidden">
+    <div class="modal-content text-left">
+        <h3 class="text-xl font-bold mb-4 text-center">Confirmação de Segurança</h3>
+        <p class="mb-4 text-center text-gray-600">Por favor, digite sua senha para confirmar.</p>
+        <form id="password-confirm-form">
+            <label for="confirm-password" class="block text-gray-700 font-semibold mb-2">Senha</label>
+            <input type="password" id="confirm-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <p id="password-confirm-message" class="text-center text-red-500 mt-4"></p>
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" id="password-confirm-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300">Cancelar</button>
+                <button type="submit" id="password-confirm-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <script type="module">
     // --- Configuração do Firebase ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updatePassword, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, query, orderBy, where, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
     // ATENÇÃO: Substitua as chaves abaixo pelas chaves do seu projeto Firebase.
     const firebaseConfig = {
@@ -323,16 +357,19 @@
     const linkToRegister = document.getElementById('link-to-register');
     const linkToLogin = document.getElementById('link-to-login');
 
+    const dashboardSection = document.getElementById('dashboard-section');
     const cadastroSection = document.getElementById('cadastro-section');
     const reportSection = document.getElementById('report-section');
     const historySection = document.getElementById('history-section');
     const changePasswordSection = document.getElementById('change-password-section');
     
+    const btnDashboard = document.getElementById('btn-dashboard');
     const btnCadastro = document.getElementById('btn-cadastro');
     const btnRelatorio = document.getElementById('btn-relatorio');
     const btnHistorico = document.getElementById('btn-historico');
     const btnLogout = document.getElementById('btn-logout');
     const btnMudarSenha = document.getElementById('btn-mudar-senha');
+    const btnLimparDados = document.getElementById('btn-limpar-dados');
 
     const loanForm = document.getElementById('loan-form');
     const clientNameInput = document.getElementById('client-name');
@@ -371,6 +408,14 @@
     const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
     
     const allPaymentsList = document.getElementById('all-payments-list');
+    const finishedLoansList = document.getElementById('finished-loans-list');
+    
+    // Novas variáveis para o modal de confirmação de senha
+    const passwordConfirmModal = document.getElementById('password-confirm-modal');
+    const passwordConfirmForm = document.getElementById('password-confirm-form');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const passwordConfirmMessage = document.getElementById('password-confirm-message');
+    const passwordConfirmCancelBtn = document.getElementById('password-confirm-cancel-btn');
 
     const totalEmprestadoSpan = document.getElementById('total-emprestado');
     const jurosAReceberSpan = document.getElementById('juros-a-receber');
@@ -400,7 +445,21 @@
         if (!auth.currentUser) return null;
         return collection(db, `users/${auth.currentUser.uid}/payments`);
     }
-
+    
+    function getFinishedLoansCollection() {
+        if (!auth.currentUser) return null;
+        return collection(db, `users/${auth.currentUser.uid}/finished_loans`);
+    }
+    
+    async function clearCollection(collectionRef) {
+        const querySnapshot = await getDocs(collection(db, collectionRef));
+        const deletePromises = [];
+        querySnapshot.forEach((doc) => {
+            deletePromises.push(deleteDoc(doc.ref));
+        });
+        return Promise.all(deletePromises);
+    }
+    
     async function loadInitialData() {
         if (!auth.currentUser) return;
         
@@ -568,11 +627,14 @@
     }
 
     function renderAllPayments() {
+        allPaymentsList.innerHTML = '';
+        finishedLoansList.innerHTML = '';
+
         const paymentsRef = getAllPaymentsCollection();
         onSnapshot(query(paymentsRef, orderBy("date", "desc")), (snapshot) => {
             allPaymentsList.innerHTML = '';
             if (snapshot.empty) {
-                allPaymentsList.innerHTML = '<p class="text-center text-gray-500 mt-8">Nenhum pagamento registrado.</p>';
+                allPaymentsList.innerHTML = '<p class="text-center text-gray-500 mt-8">Nenhum pagamento parcial registrado.</p>';
             } else {
                 snapshot.forEach(doc => {
                     const payment = doc.data();
@@ -588,11 +650,33 @@
                 });
             }
         });
+
+        const finishedLoansRef = getFinishedLoansCollection();
+        onSnapshot(query(finishedLoansRef, orderBy("finishDate", "desc")), (snapshot) => {
+            finishedLoansList.innerHTML = '';
+            if (snapshot.empty) {
+                finishedLoansList.innerHTML = '<p class="text-center text-gray-500 mt-8">Nenhum empréstimo arquivado.</p>';
+            } else {
+                snapshot.forEach(doc => {
+                    const finishedLoan = doc.data();
+                    const finishedLoanCard = document.createElement('div');
+                    finishedLoanCard.className = 'bg-gray-100 p-4 rounded-lg shadow-sm border border-gray-300';
+                    finishedLoanCard.innerHTML = `
+                        <h4 class="font-bold text-gray-800">${finishedLoan.clientName}</h4>
+                        <p class="text-sm text-gray-600">Valor Inicial: R$ ${parseFloat(finishedLoan.value).toFixed(2).replace('.', ',')}</p>
+                        <p class="text-sm text-gray-600">Juros: ${parseFloat(finishedLoan.interest).toFixed(2).replace('.', ',')}%</p>
+                        <p class="text-sm text-gray-600">Data de Quitação: ${formatDate(finishedLoan.finishDate)}</p>
+                    `;
+                    finishedLoansList.appendChild(finishedLoanCard);
+                });
+            }
+        });
     }
 
     function switchSection(sectionId) {
-        const sections = [loginSection, registerSection, cadastroSection, reportSection, historySection, changePasswordSection];
+        const sections = [dashboardSection, cadastroSection, reportSection, historySection, changePasswordSection];
         sections.forEach(section => {
+            section.classList.remove('active');
             section.classList.add('hidden');
         });
         
@@ -613,7 +697,47 @@
             appContainer.classList.remove('flex', 'flex-col', 'items-center', 'justify-center');
             
             mainAppSection.classList.remove('hidden');
-            document.getElementById(sectionId).classList.remove('hidden');
+            const targetSection = document.getElementById(sectionId);
+            if(targetSection) {
+                targetSection.classList.remove('hidden');
+                setTimeout(() => {
+                    targetSection.classList.add('active');
+                }, 10);
+            }
+        }
+    }
+
+    async function clearAllData() {
+        if (!auth.currentUser) {
+            showAlertModal('Usuário não autenticado.');
+            return;
+        }
+        
+        const userId = auth.currentUser.uid;
+
+        try {
+            // Excluir a coleção de empréstimos ativos
+            await clearCollection(`users/${userId}/loans`);
+            
+            // Excluir a coleção de pagamentos parciais
+            await clearCollection(`users/${userId}/payments`);
+            
+            // Excluir a coleção de empréstimos finalizados
+            await clearCollection(`users/${userId}/finished_loans`);
+
+            // Resetar o documento de totais do dashboard
+            const totalsDocRef = doc(db, `users/${userId}/totals/dashboard`);
+            await setDoc(totalsDocRef, { totalRecebido: 0 });
+
+            showAlertModal('Todos os dados foram limpos com sucesso! O aplicativo será reiniciado.');
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+
+        } catch (e) {
+            showAlertModal('Erro ao limpar os dados. Por favor, tente novamente.');
+            console.error("Erro ao limpar dados: ", e);
         }
     }
 
@@ -691,6 +815,7 @@
                 loginSection.classList.add('hidden');
                 registerSection.classList.add('hidden');
                 loadInitialData();
+                switchSection('dashboard-section');
             } else {
                 appContainer.classList.add('auth-background');
                 mainAppSection.classList.add('hidden');
@@ -827,6 +952,10 @@
         currentLoanId = null;
     });
 
+    btnDashboard.addEventListener('click', () => {
+        switchSection('dashboard-section');
+    });
+
     btnCadastro.addEventListener('click', () => {
         currentLoanId = null;
         loanForm.reset();
@@ -848,6 +977,37 @@
 
     btnMudarSenha.addEventListener('click', () => {
         switchSection('change-password-section');
+    });
+
+    // Lógica para o botão de limpar dados
+    btnLimparDados.addEventListener('click', () => {
+        passwordConfirmModal.classList.remove('hidden');
+        confirmPasswordInput.focus();
+    });
+
+    passwordConfirmCancelBtn.addEventListener('click', () => {
+        passwordConfirmModal.classList.add('hidden');
+        passwordConfirmForm.reset();
+        passwordConfirmMessage.textContent = '';
+    });
+    
+    passwordConfirmForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = auth.currentUser;
+        const password = confirmPasswordInput.value;
+        
+        if (user && password) {
+            const credential = EmailAuthProvider.credential(user.email, password);
+            try {
+                await reauthenticateWithCredential(user, credential);
+                passwordConfirmModal.classList.add('hidden');
+                passwordConfirmForm.reset();
+                passwordConfirmMessage.textContent = '';
+                await clearAllData();
+            } catch (error) {
+                passwordConfirmMessage.textContent = 'Senha incorreta. Tente novamente.';
+            }
+        }
     });
 
     btnBackFromEdit.addEventListener('click', () => {
@@ -884,7 +1044,7 @@
                 changePasswordForm.reset();
                 setTimeout(() => {
                     passwordChangeMessage.textContent = '';
-                    switchSection('cadastro-section');
+                    switchSection('dashboard-section');
                 }, 2000);
             } catch (error) {
                 let message = 'Erro ao alterar a senha. Senha atual incorreta ou login expirado.';
@@ -1014,8 +1174,16 @@
             
             if (paymentType === 'total') {
                 const loanDocRef = doc(getLoansCollection(), currentLoanId);
+                const loanSnapshot = await getDoc(loanDocRef);
+                if (loanSnapshot.exists()) {
+                    const loanData = loanSnapshot.data();
+                    await addDoc(getFinishedLoansCollection(), {
+                        ...loanData,
+                        finishDate: new Date().toISOString().slice(0, 10)
+                    });
+                }
                 await deleteDoc(loanDocRef);
-                showAlertModal('Quitação registrada! Empréstimo finalizado.');
+                showAlertModal('Quitação registrada! Empréstimo finalizado e arquivado.');
             } else if (paymentType === 'parcial') {
                 const totalValue = calculateTotalWithInterest(originalLoan.value, originalLoan.interest, originalLoan.loanDate);
                 const remainingBalance = totalValue - paymentAmount;
