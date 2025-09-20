@@ -275,7 +275,9 @@
     <div class="modal-content text-left">
         <h3 class="text-xl font-bold mb-4">Registrar Pagamento</h3>
         <p id="payment-client-name" class="mb-2 text-gray-700"></p>
-        <p id="payment-loan-value" class="mb-4 text-gray-700"></p>
+        <p id="payment-loan-principal" class="mb-2 text-gray-700"></p>
+        <p id="payment-loan-interest" class="mb-2 text-gray-700"></p>
+        <p id="payment-loan-total" class="mb-4 text-gray-700"></p>
         <form id="payment-form">
             <label for="payment-amount" class="block text-sm font-medium text-gray-700 mb-2">Valor Recebido (R$)</label>
             <input type="text" id="payment-amount" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" value="0,00" required>
@@ -393,7 +395,9 @@
     const paymentModal = document.getElementById('payment-modal');
     const paymentForm = document.getElementById('payment-form');
     const paymentClientName = document.getElementById('payment-client-name');
-    const paymentLoanValue = document.getElementById('payment-loan-value');
+    const paymentLoanPrincipal = document.getElementById('payment-loan-principal');
+    const paymentLoanInterest = document.getElementById('payment-loan-interest');
+    const paymentLoanTotal = document.getElementById('payment-loan-total');
     const paymentAmountInput = document.getElementById('payment-amount');
     const paymentCancelBtn = document.getElementById('payment-cancel-btn');
     const paymentTotalBtn = document.getElementById('payment-total-btn');
@@ -410,7 +414,6 @@
     const allPaymentsList = document.getElementById('all-payments-list');
     const finishedLoansList = document.getElementById('finished-loans-list');
     
-    // Novas variáveis para o modal de confirmação de senha
     const passwordConfirmModal = document.getElementById('password-confirm-modal');
     const passwordConfirmForm = document.getElementById('password-confirm-form');
     const confirmPasswordInput = document.getElementById('confirm-password');
@@ -484,35 +487,64 @@
     }
 
     // --- Funções de Lógica Geral ---
-    function calculateTotalWithInterest(loanValue, interestRate, loanDate) {
+    function calculateTotalWithInterest(loanValue, interestRate, loanDate, dueDate, isFrozen, lastPaymentDate) {
+        let principal = parseFloat(loanValue);
+        const monthlyInterestRate = parseFloat(interestRate) / 100;
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dueDateObj = new Date(dueDate + 'T00:00:00');
         const loanDateObj = new Date(loanDate + 'T00:00:00');
+        const lastPaymentDateObj = new Date(lastPaymentDate + 'T00:00:00');
         
-        const diffTime = today.getTime() - loanDateObj.getTime();
-        const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        let accruedInterest = 0;
+        let daysOverdue = 0;
+        let jurosDoCiclo = 0;
         
-        let totalValue = parseFloat(loanValue);
-        const dailyInterestRate = parseFloat(interestRate) / 100 / 30;
-        
-        if (daysPassed > 0) {
-            totalValue = totalValue * Math.pow(1 + dailyInterestRate, daysPassed);
+        if (isFrozen) {
+            return { principal, accruedInterest: 0, jurosDoCiclo: 0, total: principal, daysOverdue: 0 };
         }
         
-        return totalValue;
+        if (today.getTime() > dueDateObj.getTime()) {
+            const diffTime = today.getTime() - dueDateObj.getTime();
+            daysOverdue = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            const monthsOverdue = Math.floor(daysOverdue / 30);
+            let remainingDays = daysOverdue % 30;
+
+            let tempPrincipal = principal;
+
+            // Calcula juros compostos para os meses de atraso
+            for (let i = 0; i < monthsOverdue; i++) {
+                tempPrincipal += tempPrincipal * monthlyInterestRate;
+            }
+            
+            accruedInterest = tempPrincipal - principal;
+
+            // Calcula juros proporcionais para os dias restantes do ciclo atual
+            if (remainingDays > 0) {
+                 jurosDoCiclo = tempPrincipal * (monthlyInterestRate / 30 * remainingDays);
+            }
+            
+        } else {
+            // Se ainda não venceu, o juro do ciclo é calculado para mostrar o total
+            if (today.getTime() >= loanDateObj.getTime() && today.getTime() <= dueDateObj.getTime()) {
+                 jurosDoCiclo = principal * monthlyInterestRate;
+            }
+        }
+        
+        let total = principal + accruedInterest + jurosDoCiclo;
+        
+        return { principal, accruedInterest: parseFloat(accruedInterest.toFixed(2)), jurosDoCiclo: parseFloat(jurosDoCiclo.toFixed(2)), total: parseFloat(total.toFixed(2)), daysOverdue };
     }
-    
+
     function renderDashboard() {
         let totalEmprestado = 0;
         let jurosAReceber = 0;
         
         loans.forEach(loan => {
-            const loanValue = parseFloat(loan.value);
-            const interestRate = parseFloat(loan.interest);
-            
-            const totalValue = calculateTotalWithInterest(loanValue, interestRate, loan.loanDate);
-            
-            totalEmprestado += loanValue;
-            jurosAReceber += (totalValue - loanValue);
+            const { principal, accruedInterest, jurosDoCiclo } = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate, loan.dueDate, loan.isFrozen, loan.lastPaymentDate);
+            totalEmprestado += principal;
+            jurosAReceber += accruedInterest + jurosDoCiclo;
         });
 
         if (valuesHidden) {
@@ -541,16 +573,6 @@
         return `${day}/${month}/${year}`;
     }
 
-    function getDaysSinceLoan(loanDateString) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); 
-        const loanDate = new Date(loanDateString + 'T00:00:00');
-        
-        const diffTime = today.getTime() - loanDate.getTime();
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    }
-
     function renderLoans() {
         loansContainer.innerHTML = '';
         const searchTerm = filterInput.value.toLowerCase();
@@ -560,42 +582,66 @@
         );
 
         if (filteredLoans.length === 0) {
-            loansContainer.innerHTML = '<p class="text-center text-gray-500 mt-8">Nenhum empréstimo encontrado.</p>';
+            loansContainer.innerHTML = '<p class="text-center text-gray-500 mt-8">Nenhum empréstimo ativo encontrado.</p>';
             return;
         }
 
         filteredLoans.forEach((loan) => {
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
             const dueDateObj = new Date(loan.dueDate + 'T00:00:00');
 
-            const statusText = today.getTime() > dueDateObj.getTime() ? 'Atrasado' : 'Em dia';
-            const statusColor = today.getTime() > dueDateObj.getTime() ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800';
+            let statusText = 'Em dia';
+            let statusColor = 'bg-green-200 text-green-800';
+            let daysOverdue = 0;
 
-            const loanValue = parseFloat(loan.value);
-            const interestRate = parseFloat(loan.interest);
-            
-            const totalValue = calculateTotalWithInterest(loanValue, interestRate, loan.loanDate);
-            const daysSinceLoan = getDaysSinceLoan(loan.loanDate);
+            if (loan.isFrozen) {
+                statusText = 'Juros Congelados';
+                statusColor = 'bg-blue-200 text-blue-800';
+            } else if (today.getTime() > dueDateObj.getTime()) {
+                statusText = 'Atrasado';
+                statusColor = 'bg-red-200 text-red-800';
+                const diffTime = today.getTime() - dueDateObj.getTime();
+                daysOverdue = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            const { principal, accruedInterest, jurosDoCiclo, total } = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate, loan.dueDate, loan.isFrozen, loan.lastPaymentDate);
             
             const loanCard = document.createElement('div');
-            loanCard.className = 'bg-white p-6 rounded-xl shadow-md border border-gray-200 transition-all duration-300 hover:shadow-lg';
+            loanCard.className = 'bg-white p-6 rounded-xl shadow-md border border-gray-200 transition-all duration-300 hover:shadow-lg flex flex-col space-y-4';
             loanCard.innerHTML = `
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">${loan.clientName}</h3>
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2 sm:mb-0">${loan.clientName}</h3>
                     <span class="px-3 py-1 rounded-full text-sm font-semibold ${statusColor}">
                         ${statusText}
                     </span>
                 </div>
-                <div class="grid grid-cols-2 gap-y-2 text-sm text-gray-600">
-                    <p><strong>Valor Inicial:</strong> R$ ${loanValue.toFixed(2).replace('.', ',')}</p>
-                    <p><strong>Juros:</strong> ${interestRate.toFixed(2).replace('.', ',')}%</p>
-                    <p><strong>Total Atual:</strong> R$ ${totalValue.toFixed(2).replace('.', ',')}</p>
-                    <p><strong>Data do Empréstimo:</strong> ${formatDate(loan.loanDate)}</p>
-                    <p><strong>Vencimento:</strong> ${formatDate(loan.dueDate)}</p>
-                    <p><strong>Dias do Empréstimo:</strong> ${daysSinceLoan} dias</p>
-                    ${loan.notes ? `<div class="md:col-span-2"><p><strong>Observações:</strong> ${loan.notes}</p></div>` : ''}
+                
+                <p class="text-sm text-gray-700"><strong>Valor Principal:</strong> R$ ${principal.toFixed(2).replace('.', ',')}</p>
+                <p class="text-sm text-gray-700"><strong>Juros Acumulados:</strong> R$ ${accruedInterest.toFixed(2).replace('.', ',')}</p>
+                <p class="text-sm text-gray-700"><strong>Juros do Ciclo:</strong> R$ ${jurosDoCiclo.toFixed(2).replace('.', ',')}</p>
+                <p class="text-sm text-gray-700"><strong>Total da Dívida:</strong> R$ ${total.toFixed(2).replace('.', ',')}</p>
+                <p class="text-sm text-gray-700"><strong>Data do Empréstimo:</strong> ${formatDate(loan.loanDate)}</p>
+                <p class="text-sm text-gray-700"><strong>Vencimento:</strong> ${formatDate(loan.dueDate)}</p>
+                <p class="text-sm text-gray-700"><strong>Dias de Atraso:</strong> ${daysOverdue > 0 ? daysOverdue : 0} dias</p>
+
+                ${loan.notes ? `<div class="mt-4"><p><strong>Observações:</strong> ${loan.notes}</p></div>` : ''}
+                
+                <div class="border-t pt-4 border-gray-200">
+                    <h4 class="font-semibold text-gray-700 mb-2">Histórico de Transações:</h4>
+                    <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                        ${(loan.history || []).map(item => `
+                            <li>
+                                <span class="font-medium">${formatDate(item.date)}:</span> ${item.description}
+                            </li>
+                        `).join('')}
+                    </ul>
                 </div>
+
                 <div class="mt-4 flex flex-wrap justify-end gap-2 btn-group">
+                    <button class="px-4 py-2 text-sm font-semibold text-white bg-gray-500 rounded-lg hover:bg-gray-600 transition duration-300 shadow-md freeze-btn" data-id="${loan.id}">
+                        ${loan.isFrozen ? 'Juros Congelados' : 'Congelar Juros'}
+                    </button>
                     <button class="px-4 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300 shadow-md edit-btn" data-id="${loan.id}">
                         Editar
                     </button>
@@ -621,6 +667,7 @@
             loanCard.querySelector('.payment-btn').addEventListener('click', () => showPaymentModal(loan.id));
             loanCard.querySelector('.delete-btn').addEventListener('click', () => showConfirmModal(loan.id));
             loanCard.querySelector('.share-btn').addEventListener('click', () => shareLoanDetails(loan.id));
+            loanCard.querySelector('.freeze-btn').addEventListener('click', () => toggleFreezeStatus(loan.id));
             
             loansContainer.appendChild(loanCard);
         });
@@ -663,7 +710,7 @@
                     finishedLoanCard.className = 'bg-gray-100 p-4 rounded-lg shadow-sm border border-gray-300';
                     finishedLoanCard.innerHTML = `
                         <h4 class="font-bold text-gray-800">${finishedLoan.clientName}</h4>
-                        <p class="text-sm text-gray-600">Valor Inicial: R$ ${parseFloat(finishedLoan.value).toFixed(2).replace('.', ',')}</p>
+                        <p class="text-sm text-gray-600">Valor Inicial: R$ ${parseFloat(finishedLoan.initialValue).toFixed(2).replace('.', ',')}</p>
                         <p class="text-sm text-gray-600">Juros: ${parseFloat(finishedLoan.interest).toFixed(2).replace('.', ',')}%</p>
                         <p class="text-sm text-gray-600">Data de Quitação: ${formatDate(finishedLoan.finishDate)}</p>
                     `;
@@ -716,16 +763,9 @@
         const userId = auth.currentUser.uid;
 
         try {
-            // Excluir a coleção de empréstimos ativos
             await clearCollection(`users/${userId}/loans`);
-            
-            // Excluir a coleção de pagamentos parciais
             await clearCollection(`users/${userId}/payments`);
-            
-            // Excluir a coleção de empréstimos finalizados
             await clearCollection(`users/${userId}/finished_loans`);
-
-            // Resetar o documento de totais do dashboard
             const totalsDocRef = doc(db, `users/${userId}/totals/dashboard`);
             await setDoc(totalsDocRef, { totalRecebido: 0 });
 
@@ -765,10 +805,13 @@
         currentLoanId = id;
         const loan = loans.find(l => l.id === id);
         if (loan) {
-            currentLoanTotalValue = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate);
+            const { principal, accruedInterest, jurosDoCiclo, total } = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate, loan.dueDate, loan.isFrozen, loan.lastPaymentDate);
+            currentLoanTotalValue = total;
             paymentClientName.textContent = `Cliente: ${loan.clientName}`;
-            paymentLoanValue.textContent = `Valor Atual da Dívida: R$ ${currentLoanTotalValue.toFixed(2).replace('.', ',')}`;
-            paymentAmountInput.value = currentLoanTotalValue.toFixed(2).replace('.', ',');
+            paymentLoanPrincipal.textContent = `Saldo Principal: R$ ${principal.toFixed(2).replace('.', ',')}`;
+            paymentLoanInterest.textContent = `Juros Acumulados: R$ ${accruedInterest.toFixed(2).replace('.', ',')}`;
+            paymentLoanTotal.textContent = `Valor Total da Dívida: R$ ${total.toFixed(2).replace('.', ',')}`;
+            paymentAmountInput.value = total.toFixed(2).replace('.', ',');
             paymentModal.classList.remove('hidden');
         }
     }
@@ -776,8 +819,27 @@
     function shareLoanDetails(id) {
         const loan = loans.find(l => l.id === id);
         if (loan) {
-            const totalValue = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate);
-            const message = `Olá, ${loan.clientName}. O valor atual do seu empréstimo é de R$ ${totalValue.toFixed(2).replace('.', ',')}. O vencimento foi em ${formatDate(loan.dueDate)}. Por favor, realize o pagamento. Obrigado!`;
+            const { principal, accruedInterest, jurosDoCiclo, total } = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate, loan.dueDate, loan.isFrozen, loan.lastPaymentDate);
+            
+            let statusMessage = '';
+            if (loan.isFrozen) {
+                statusMessage = 'O cálculo dos juros está temporariamente congelado.';
+            } else {
+                statusMessage = `Total da sua dívida, incluindo juros: R$ ${total.toFixed(2).replace('.', ',')}.`;
+            }
+
+            let historyMessage = (loan.history || []).map(item => {
+                return `\n${formatDate(item.date)} - ${item.description}`;
+            }).join('');
+            
+            const message = `Olá, ${loan.clientName}. Segue o resumo do seu empréstimo:\n\n` +
+                                 `Valor Principal: R$ ${principal.toFixed(2).replace('.', ',')}\n` +
+                                 `Juros: ${parseFloat(loan.interest).toFixed(2).replace('.', ',')}% ao mês\n` +
+                                 `Vencimento: ${formatDate(loan.dueDate)}\n\n` +
+                                 `${statusMessage}\n\n` +
+                                 `--- Histórico de Transações ---\n` +
+                                 `${historyMessage}\n\n` +
+                                 `Qualquer dúvida, estou à disposição.`;
             
             navigator.clipboard.writeText(message).then(() => {
                 showAlertModal('Mensagem de cobrança copiada para a área de transferência!');
@@ -802,6 +864,16 @@
             submitLoanBtn.textContent = 'Atualizar Empréstimo';
             
             switchSection('cadastro-section');
+        }
+    }
+
+    async function toggleFreezeStatus(id) {
+        const loan = loans.find(l => l.id === id);
+        if (loan) {
+            const isFrozen = !loan.isFrozen;
+            const docRef = doc(getLoansCollection(), id);
+            await updateDoc(docRef, { isFrozen });
+            showAlertModal(`Status de juros alterado para ${isFrozen ? 'CONGELADO' : 'ATIVO'}.`);
         }
     }
     
@@ -889,9 +961,7 @@
             loginMessage.textContent = 'Login bem-sucedido!';
             loginMessage.classList.remove('text-red-500');
             loginMessage.classList.add('text-green-500');
-            setTimeout(() => {
-                // A navegação será tratada pelo onAuthStateChanged
-            }, 1000);
+            setTimeout(() => {}, 1000);
         } catch (error) {
             let message = 'Erro ao fazer login. Tente novamente.';
             if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -979,7 +1049,6 @@
         switchSection('change-password-section');
     });
 
-    // Lógica para o botão de limpar dados
     btnLimparDados.addEventListener('click', () => {
         passwordConfirmModal.classList.remove('hidden');
         confirmPasswordInput.focus();
@@ -1064,14 +1133,35 @@
             loanDate: loanDateInput.value,
             dueDate: dueDateInput.value,
             notes: notesInput.value,
+            lastPaymentDate: loanDateInput.value,
+            isFrozen: false
         };
 
         try {
             if (currentLoanId) {
                 const docRef = doc(getLoansCollection(), currentLoanId);
-                await updateDoc(docRef, loanData);
+                const loanSnapshot = await getDoc(docRef);
+                const originalLoan = loanSnapshot.data();
+
+                const updatedHistory = [...(originalLoan.history || [])];
+                if (updatedHistory.length > 0) {
+                    updatedHistory[0] = {
+                        date: loanData.loanDate,
+                        type: "Empréstimo",
+                        amount: loanData.value,
+                        description: `Empréstimo inicial de R$ ${loanData.value.toFixed(2).replace('.', ',')} com juros de ${loanData.interest.toFixed(2).replace('.', ',')}%.`
+                    };
+                }
+
+                await updateDoc(docRef, { ...loanData, history: updatedHistory });
                 showAlertModal('Empréstimo atualizado com sucesso!');
             } else {
+                loanData.history = [{
+                    date: loanData.loanDate,
+                    type: "Empréstimo",
+                    amount: loanData.value,
+                    description: `Empréstimo inicial de R$ ${loanData.value.toFixed(2).replace('.', ',')} com juros de ${loanData.interest.toFixed(2).replace('.', ',')}%.`
+                }];
                 await addDoc(getLoansCollection(), loanData);
                 showAlertModal('Empréstimo salvo com sucesso!');
             }
@@ -1093,7 +1183,7 @@
             return;
         }
         
-        const totalValue = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate);
+        const { principal, accruedInterest, jurosDoCiclo, total } = calculateTotalWithInterest(loan.value, loan.interest, loan.loanDate, loan.dueDate, loan.isFrozen, loan.lastPaymentDate);
         const amount = parseFloat(paymentAmountInput.value.replace(/,/g, '.'));
         
         if (isNaN(amount) || amount <= 0) {
@@ -1101,35 +1191,24 @@
             return;
         }
 
-        if (amount > totalValue && type === 'parcial') {
-            showAlertModal(`O valor do pagamento não pode ser maior que o saldo devedor de R$ ${totalValue.toFixed(2).replace('.', ',')}.`);
-            return;
+        if (type === 'parcial' && amount >= total) {
+             showAlertModal('O valor digitado é suficiente para quitar a dívida. Use a opção "Quitar" ou digite um valor menor.');
+             return;
         }
         
+        if (type === 'total' && amount < total) {
+            showAlertModal('O valor digitado é menor que o total. Use a opção "Parcial" ou adicione mais para quitar a dívida.');
+            return;
+        }
+
         currentPaymentAmount = amount;
         paymentType = type;
         
         let message;
         if (type === 'total') {
-            const roundedTotalValue = parseFloat(totalValue.toFixed(2));
-            const roundedAmount = parseFloat(amount.toFixed(2));
-            
-            if (roundedAmount < roundedTotalValue) {
-                showAlertModal('O valor digitado é menor que o total. Use a opção "Parcial" ou adicione mais para quitar a dívida.');
-                return;
-            }
-            
-            message = `Tem certeza que deseja registrar a quitação de R$ ${roundedTotalValue.toFixed(2).replace('.', ',')}?`;
-            currentPaymentAmount = roundedTotalValue;
+            message = `Tem certeza que deseja registrar a quitação de R$ ${total.toFixed(2).replace('.', ',')}?`;
         } else if (type === 'parcial') {
-            const roundedTotalValue = parseFloat(totalValue.toFixed(2));
-            const roundedAmount = parseFloat(amount.toFixed(2));
-
-            message = `Tem certeza que deseja registrar o pagamento PARCIAL de R$ ${roundedAmount.toFixed(2).replace('.', ',')}?`;
-            if (roundedAmount >= roundedTotalValue) {
-                showAlertModal('O valor digitado é suficiente para quitar a dívida. Use a opção "Quitar".');
-                return;
-            }
+            message = `Tem certeza que deseja registrar o pagamento PARCIAL de R$ ${amount.toFixed(2).replace('.', ',')}?`;
         }
 
         paymentConfirmationMessage.textContent = message;
@@ -1177,34 +1256,46 @@
                 const loanSnapshot = await getDoc(loanDocRef);
                 if (loanSnapshot.exists()) {
                     const loanData = loanSnapshot.data();
+                    const updatedHistory = [...(loanData.history || []), {
+                        date: new Date().toISOString().slice(0, 10),
+                        type: "Quitação",
+                        amount: currentLoanTotalValue,
+                        description: `Dívida quitada. Valor total recebido: R$ ${currentLoanTotalValue.toFixed(2).replace('.', ',')}.`
+                    }];
                     await addDoc(getFinishedLoansCollection(), {
                         ...loanData,
+                        history: updatedHistory,
+                        initialValue: loanData.initialValue || loanData.value, // Mantém o valor original
                         finishDate: new Date().toISOString().slice(0, 10)
                     });
                 }
                 await deleteDoc(loanDocRef);
                 showAlertModal('Quitação registrada! Empréstimo finalizado e arquivado.');
             } else if (paymentType === 'parcial') {
-                const totalValue = calculateTotalWithInterest(originalLoan.value, originalLoan.interest, originalLoan.loanDate);
-                const remainingBalance = totalValue - paymentAmount;
+                const { total: currentTotal } = calculateTotalWithInterest(originalLoan.value, originalLoan.interest, originalLoan.loanDate, originalLoan.dueDate, originalLoan.isFrozen, originalLoan.lastPaymentDate);
 
-                if (remainingBalance <= 0.01) {
-                    const loanDocRef = doc(getLoansCollection(), currentLoanId);
-                    await deleteDoc(loanDocRef);
-                    showAlertModal('O pagamento parcial foi suficiente para quitar o empréstimo! Ele foi registrado como quitação.');
-                } else {
-                    const updatedLoan = {
-                        ...originalLoan,
-                        value: remainingBalance.toFixed(2),
-                    };
-                    const loanDocRef = doc(getLoansCollection(), currentLoanId);
-                    await updateDoc(loanDocRef, updatedLoan);
-                    showAlertModal(`Pagamento parcial de R$ ${paymentAmount.toFixed(2).replace('.', ',')} registrado. Saldo restante atualizado para R$ ${remainingBalance.toFixed(2).replace('.', ',')}.`);
-                }
+                const novoSaldoPrincipal = currentTotal - paymentAmount;
+
+                const updatedLoan = {
+                    ...originalLoan,
+                    value: novoSaldoPrincipal.toFixed(2),
+                    lastPaymentDate: new Date().toISOString().slice(0, 10),
+                    history: [...(originalLoan.history || []), {
+                        date: new Date().toISOString().slice(0, 10),
+                        type: "Pagamento Parcial",
+                        amount: paymentAmount,
+                        description: `Pagamento parcial de R$ ${paymentAmount.toFixed(2).replace('.', ',')}. Saldo restante: R$ ${novoSaldoPrincipal.toFixed(2).replace('.', ',')}.`
+                    }]
+                };
+
+                const loanDocRef = doc(getLoansCollection(), currentLoanId);
+                await updateDoc(loanDocRef, updatedLoan);
+                showAlertModal(`Pagamento parcial de R$ ${paymentAmount.toFixed(2).replace('.', ',')} registrado. Saldo principal restante: R$ ${novoSaldoPrincipal.toFixed(2).replace('.', ',')}.`);
             }
             paymentAmountInput.value = '0,00';
         } catch (e) {
             showAlertModal('Erro ao registrar pagamento.');
+            console.error("Erro ao registrar pagamento:", e);
         }
     });
     
